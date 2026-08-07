@@ -10,7 +10,7 @@ DATABASE_URL = URL.create(
     drivername="postgresql+psycopg",
     username="postgres",
     password=os.environ["DATABASE_PASSWORD"],
-    host="localhost",
+    host=os.getenv("DATABASE_HOST", "localhost"),
     port=5432,
     database="tasks_db",
 )
