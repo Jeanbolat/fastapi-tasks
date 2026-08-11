@@ -1,62 +1,44 @@
-\# FastAPI Tasks API
-
-
+FastAPI Tasks API
 
 REST API for task management with user authentication, PostgreSQL, Alembic migrations, and Docker Compose.
 
+Features
 
+User registration with secure Argon2 password hashing
 
-\## Features
+JWT authentication
 
+Tasks belong to their creator
 
+Create, read, update, complete, and delete tasks
 
-\- User registration with secure Argon2 password hashing
+PostgreSQL database
 
-\- JWT authentication
+Alembic migrations
 
-\- Tasks belong to their creator
+Docker Compose setup
 
-\- Create, read, update, complete, and delete tasks
+Basic automated tests with pytest
 
-\- PostgreSQL database
+Tech Stack
 
-\- Alembic migrations
+Python
 
-\- Docker Compose setup
+FastAPI
 
-\- Basic automated tests with pytest
+SQLAlchemy
 
+PostgreSQL
 
+Alembic
 
-\## Tech Stack
+PyJWT
 
+Docker and Docker Compose
 
+Run with Docker
 
-\- Python
-
-\- FastAPI
-
-\- SQLAlchemy
-
-\- PostgreSQL
-
-\- Alembic
-
-\- PyJWT
-
-\- Docker and Docker Compose
-
-
-
-\## Run with Docker
-
-
-
-Create a `.env` file in the project root:
-
-
-
-```env
+Create a .env file in the project root:
 
 DATABASE\_PASSWORD="your\_postgres\_password"
 
@@ -64,109 +46,57 @@ SECRET\_KEY="your\_secret\_jwt\_key"
 
 DATABASE\_HOST=localhost
 
-```
-
-
-
 Start the application:
-
-
-
-```bash
 
 docker compose up --build
 
-```
-
-
-
 Open the API documentation:
-
-
-
-```text
 
 http://127.0.0.1:8000/docs
 
-```
-
-
-
 To run containers in the background:
-
-
-
-```bash
 
 docker compose up -d
 
-```
-
-
-
 To stop them:
-
-
-
-```bash
 
 docker compose down
 
-```
+API Endpoints
+
+Method	Endpoint	Description
+
+POST	/users	Register a user
+
+POST	/token	Get a JWT access token
+
+GET	/users/me	Get the current user
+
+GET	/tasks	Get tasks of the current user
+
+POST	/tasks	Create a task
+
+GET	/tasks/{task\_id}	Get one task
+
+PUT	/tasks/{task\_id}	Update a task title
+
+PUT	/tasks/{task\_id}/done	Mark a task as completed
+
+DELETE	/tasks/{task\_id}	Delete a task
 
 
-
-\## API Endpoints
-
-
-
-| Method | Endpoint | Description |
-
-| --- | --- | --- |
-
-| POST | `/users` | Register a user |
-
-| POST | `/token` | Get a JWT access token |
-
-| GET | `/users/me` | Get the current user |
-
-| GET | `/tasks` | Get tasks of the current user |
-
-| POST | `/tasks` | Create a task |
-
-| GET | `/tasks/{task\_id}` | Get one task |
-
-| PUT | `/tasks/{task\_id}` | Update a task title |
-
-| PUT | `/tasks/{task\_id}/done` | Mark a task as completed |
-
-| DELETE | `/tasks/{task\_id}` | Delete a task |
 
 
 
 All task endpoints require JWT authorization.
 
-
-
-\## Tests
-
-
+Tests
 
 Activate the virtual environment and run:
 
-
-
-```bash
-
 pytest
 
-```
+Notes
 
-
-
-\## Notes
-
-
-
-Never commit the `.env` file. It contains database credentials and the JWT secret key.
+Never commit the .env file. It contains database credentials and the JWT secret key.
 
