@@ -21,9 +21,16 @@ if config.config_file_name is not None:
 # target_metadata = mymodel.Base.metadata
 from database import Base, DATABASE_URL
 from main import Task
+if isinstance(DATABASE_URL, str):
+    database_url_for_alembic = DATABASE_URL
+else:
+    database_url_for_alembic = DATABASE_URL.render_as_string(
+        hide_password=False
+    )
+
 config.set_main_option(
     "sqlalchemy.url",
-    DATABASE_URL.render_as_string(hide_password=False),
+    database_url_for_alembic,
 )
 
 target_metadata = Base.metadata
