@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Мои задачи</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 700px; margin: 40px auto; padding: 0 16px; background: #f5f7fb; }
+    section { background: white; padding: 20px; border-radius: 12px; margin-bottom: 16px; }
+    input, textarea, button { box-sizing: border-box; width: 100%; padding: 10px; margin: 6px 0; }
+    button { cursor: pointer; background: #2563eb; border: 0; border-radius: 6px; color: white; }
+    .task { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid #ddd; padding: 12px 0; }
+    .done { text-decoration: line-through; color: #777; }
+    .hidden { display: none; }
+    #message { color: #b91c1c; }
+  </style>
+</head>
+<body>
+  <h1>Мои задачи</h1>
+  <p id="message"></p>
+
+  <section id="auth">
+    <h2>Регистрация или вход</h2>
+    <input id="username" placeholder="Логин">
+    <input id="password" type="password" placeholder="Пароль">
+    <button onclick="register()">Зарегистрироваться</button>
+    <button onclick="login()">Войти</button>
+  </section>
+
+  <section id="app" class="hidden">
+    <button onclick="logout()">Выйти</button>
+    <h2>Новая задача</h2>
+    <input id="title" placeholder="Название задачи">
+    <textarea id="description" placeholder="Описание (необязательно)"></textarea>
+    <button onclick="createTask()">Добавить задачу</button>
+
+    <h2>Список задач</h2>
+    <div id="tasks"></div>
+  </section>
+
+  <script>
+    const token = localStorage.getItem("token");
+
+    if (token) showApp();
+
+    function showMessage(text) {
+      document.getElementById("message").textContent = text;
+    }
+
+    function authHeaders() {
+      return {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${localStorage.getItem("token")}`,
+      };
+    }
+
+    async function register() {
+      const response = await fetch("/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: document.getElementById("username").value,
+          password: document.getElementById("password").value,
+        }),
+      });
+
+      if (!response.ok) {
+        showMessage("Не удалось зарегистрироваться");
+        return;
+      }
+
+      showMessage("Пользователь создан. Теперь войдите.");
+    }
+
+    async function login() {
+      const form = new URLSearchParams();
+      form.append("username", document.getElementById("username").value);
+      form.append("password", document.getElementById("password").value);
+
+      const response = await fetch("/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: form,
+      });
+
+      if (!response.ok) {
+        showMessage("Неверный логин или пароль");
+        return;
+      }
+
+      const data = await response.json();
+      localStorage.setItem("token", data.access_token);
+      showApp();
+    }
+
+    function showApp() {
+      document.getElementById("auth").classList.add("hidden");
+      document.getElementById("app").classList.remove("hidden");
+      showMessage("");
+      loadTasks();
+    }
+
+    function logout() {
+      localStorage.removeItem("token");
+      location.reload();
+    }
+
+    async function loadTasks() {
+      const response = await fetch("/tasks", {
+        headers: authHeaders(),
+      });
+
+      if (!response.ok) {
+        logout();
+        return;
+      }
+
+      const tasks = await response.json();
+      const container = document.getElementById("tasks");
+
+      container.innerHTML = tasks.map(task => `
+        <div class="task">
+          <span class="${task.done ? "done" : ""}">
+            <strong>${task.title}</strong><br>
+            ${task.description || ""}
+          </span>
+          <div>
+            <button onclick="completeTask(${task.id})">Готово</button>
+            <button onclick="deleteTask(${task.id})">Удалить</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    async function createTask() {
+      const response = await fetch("/tasks", {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({
+          title: document.getElementById("title").value,
+          description: document.getElementById("description").value || null,
+        }),
+      });
+
+      if (!response.ok) {
+        showMessage("Не удалось создать задачу");
+        return;
+      }
+
+      document.getElementById("title").value = "";
+      document.getElementById("description").value = "";
+      loadTasks();
+    }
+
+    async function completeTask(id) {
+      await fetch(`/tasks/${id}/done`, {
+        method: "PUT",
+        headers: authHeaders(),
+      });
+      loadTasks();
+    }
+
+    async function deleteTask(id) {
+      await fetch(`/tasks/${id}`, {
+        method: "DELETE",
+        headers: authHeaders(),
+      });
+      loadTasks();
+    }
+  </script>
+</body>
+</html>

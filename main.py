@@ -4,6 +4,8 @@ from sqlalchemy import Boolean, ForeignKey, String, select
 from sqlalchemy.orm import Mapped, Session, mapped_column
 from pwdlib import PasswordHash
 from datetime import datetime, timedelta, timezone
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from jwt.exceptions import InvalidTokenError
 from fastapi import status
@@ -15,6 +17,7 @@ import os
 from dotenv import load_dotenv
 
 app = FastAPI()
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 password_hasher = PasswordHash.recommended()
@@ -144,10 +147,10 @@ def get_owned_task(
     return task
 
 
-
-@app.get("/")
+@app.get("/", include_in_schema=False)
 def home():
-    return {"message": "API задач работает с PostgreSQL"}
+    return FileResponse("static/index.html")
+
 
 
 @app.get("/tasks", response_model=list[TaskRead])
