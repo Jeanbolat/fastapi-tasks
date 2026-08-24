@@ -35,6 +35,13 @@
     <button onclick="createTask()">Добавить задачу</button>
 
     <h2>Список задач</h2>
+
+    <div class="filters">
+      <button onclick="setFilter('all')">Все</button>
+      <button onclick="setFilter('active')">Активные</button>
+      <button onclick="setFilter('done')">Выполненные</button>
+    </div>
+
     <div id="tasks"></div>
   </section>
 
@@ -104,7 +111,14 @@
       localStorage.removeItem("token");
       location.reload();
     }
+    
 
+    let currentFilter = "all";
+
+    function setFilter(filter) {
+      currentFilter = filter;
+      loadTasks();
+    }
     async function loadTasks() {
       const response = await fetch("/tasks", {
         headers: authHeaders(),
@@ -116,9 +130,18 @@
       }
 
       const tasks = await response.json();
+
+      const filteredTasks = tasks.filter(task => {
+        if (currentFilter === "active") return !task.done;
+        if (currentFilter === "done") return task.done;
+        return true;
+      });
+
+
+
       const container = document.getElementById("tasks");
 
-      container.innerHTML = tasks.map(task => `
+      container.innerHTML = filteredTasks.map(task => `
         <div class="task">
           <span class="${task.done ? "done" : ""}">
             <strong>${task.title}</strong><br>
@@ -129,6 +152,7 @@
             <button onclick="deleteTask(${task.id})">Удалить</button>
           </div>
         </div>
+
       `).join("");
     }
 
