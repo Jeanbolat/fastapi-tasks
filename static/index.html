@@ -148,6 +148,7 @@
             ${task.description || ""}
           </span>
           <div>
+            <button onclick="editTask(${task.id})">Редактировать</button>
             <button onclick="completeTask(${task.id})">Готово</button>
             <button onclick="deleteTask(${task.id})">Удалить</button>
           </div>
@@ -175,6 +176,42 @@
       document.getElementById("description").value = "";
       loadTasks();
     }
+    async function editTask(id) {
+      const taskResponse = await fetch(`/tasks/${id}`, {
+        headers: authHeaders(),
+      });
+
+      if (!taskResponse.ok) {
+        showMessage("Не удалось получить задачу");
+        return;
+      }
+
+      const task = await taskResponse.json();
+      const newTitle = prompt("Новое название задачи:", task.title);
+
+      if (newTitle === null) return;
+
+      if (!newTitle.trim()) {
+        showMessage("Название не может быть пустым");
+        return;
+      }
+
+      const updateResponse = await fetch(`/tasks/${id}`, {
+        method: "PUT",
+        headers: authHeaders(),
+        body: JSON.stringify({ title: newTitle.trim() }),
+      });
+
+      if (!updateResponse.ok) {
+        showMessage("Не удалось обновить задачу");
+        return;
+      }
+
+      loadTasks();
+    }
+
+
+
 
     async function completeTask(id) {
       await fetch(`/tasks/${id}/done`, {
