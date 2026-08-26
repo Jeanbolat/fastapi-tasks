@@ -1,9 +1,9 @@
 from fastapi import Depends, FastAPI, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import Boolean, ForeignKey, String, select
+from sqlalchemy import Boolean, Date, ForeignKey, String, select
 from sqlalchemy.orm import Mapped, Session, mapped_column
 from pwdlib import PasswordHash
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -36,6 +36,7 @@ class Task(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str] = mapped_column(String(200))
     description: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    due_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     done: Mapped[bool] = mapped_column(Boolean, default=False)
     user_id: Mapped[int | None] = mapped_column(
         ForeignKey("users.id"),
@@ -69,6 +70,7 @@ class Token(BaseModel):
 class TaskCreate(BaseModel):
     title: str = Field(min_length=1, max_length=200)
     description: str | None = Field(default=None, max_length=500)
+    due_date: date | None = None
 
 class TaskUpdate(BaseModel):
     title: str = Field(min_length=1, max_length=200)
@@ -78,6 +80,7 @@ class TaskRead(BaseModel):
     id: int
     title: str
     description: str | None
+    due_date: date | None
     done: bool
 
     model_config = ConfigDict(from_attributes=True)
@@ -191,6 +194,7 @@ def create_task(
     task = Task(
         title=task_data.title,
         description=task_data.description,  
+        due_date=task_data.due_date,
         user_id=current_user.id,
 )
     db.add(task)

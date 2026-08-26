@@ -9,7 +9,7 @@ def test_home():
     response = client.get("/")
 
     assert response.status_code == 200
-    assert "message" in response.json()
+    assert "Мои задачи" in response.text
 
 def test_tasks_require_authorization():
     response = client.get("/tasks")

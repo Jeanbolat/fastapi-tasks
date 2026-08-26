@@ -13,6 +13,7 @@
     .done { text-decoration: line-through; color: #777; }
     .hidden { display: none; }
     #message { color: #b91c1c; }
+    .overdue { color: #b91c1c; font-weight: bold; }
   </style>
 </head>
 <body>
@@ -32,6 +33,7 @@
     <h2>Новая задача</h2>
     <input id="title" placeholder="Название задачи">
     <textarea id="description" placeholder="Описание (необязательно)"></textarea>
+    <input id="due_date" type="date">
     <button onclick="createTask()">Добавить задачу</button>
 
     <h2>Список задач</h2>
@@ -119,6 +121,10 @@
       currentFilter = filter;
       loadTasks();
     }
+    function isOverdue(task) {
+      const today = new Date().toISOString().slice(0, 10);
+      return !task.done && task.due_date && task.due_date < today;
+    }
     async function loadTasks() {
       const response = await fetch("/tasks", {
         headers: authHeaders(),
@@ -146,6 +152,7 @@
           <span class="${task.done ? "done" : ""}">
             <strong>${task.title}</strong><br>
             ${task.description || ""}
+            ${task.due_date ? "<br><span class='" + (isOverdue(task) ? "overdue" : "") + "'>Срок: " + task.due_date + "</span>" : ""}
           </span>
           <div>
             <button onclick="editTask(${task.id})">Редактировать</button>
@@ -164,6 +171,7 @@
         body: JSON.stringify({
           title: document.getElementById("title").value,
           description: document.getElementById("description").value || null,
+          due_date: document.getElementById("due_date").value || null,
         }),
       });
 
@@ -174,6 +182,7 @@
 
       document.getElementById("title").value = "";
       document.getElementById("description").value = "";
+      document.getElementById("due_date").value = "";
       loadTasks();
     }
     async function editTask(id) {
