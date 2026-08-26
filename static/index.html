@@ -136,7 +136,13 @@
       }
 
       const tasks = await response.json();
+      tasks.sort((firstTask, secondTask) => {
+        if (!firstTask.due_date && !secondTask.due_date) return 0;
+        if (!firstTask.due_date) return 1;
+        if (!secondTask.due_date) return -1;
 
+        return firstTask.due_date.localeCompare(secondTask.due_date);
+      });
       const filteredTasks = tasks.filter(task => {
         if (currentFilter === "active") return !task.done;
         if (currentFilter === "done") return task.done;
