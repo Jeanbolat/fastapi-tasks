@@ -12,6 +12,27 @@
     .task { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid #ddd; padding: 12px 0; }
     .done { text-decoration: line-through; color: #777; }
     .hidden { display: none; }
+    .filters {
+      display: flex;
+      gap: 8px;
+    }
+
+    .filters button {
+      flex: 1;
+      width: auto;
+    }
+    .task-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 150px;
+    }
+
+    .task-actions button {
+      width: auto;
+      margin: 0;
+    }
+
     #message { color: #b91c1c; }
     .overdue { color: #b91c1c; font-weight: bold; }
   </style>
@@ -160,7 +181,7 @@
             ${task.description || ""}
             ${task.due_date ? "<br><span class='" + (isOverdue(task) ? "overdue" : "") + "'>Срок: " + task.due_date + "</span>" : ""}
           </span>
-          <div>
+          <div class="task-actions">
             <button onclick="editTask(${task.id})">Редактировать</button>
             <button onclick="completeTask(${task.id})">Готово</button>
             <button onclick="deleteTask(${task.id})">Удалить</button>
