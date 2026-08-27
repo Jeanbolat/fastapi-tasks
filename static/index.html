@@ -32,6 +32,50 @@
       width: auto;
       margin: 0;
     }
+    .view-switcher,
+    .calendar-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 12px 0;
+    }
+
+    .view-switcher button,
+    .calendar-toolbar button {
+      width: auto;
+      flex: 1;
+    }
+
+    .calendar-toolbar strong {
+      text-align: center;
+      flex: 2;
+    }
+
+    #calendar {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+    }
+
+    .calendar-day {
+      min-height: 100px;
+      padding: 8px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+    }
+
+    .calendar-day-number {
+      font-weight: bold;
+    }
+
+    .calendar-task {
+      margin-top: 5px;
+      padding: 4px;
+      border-radius: 4px;
+      background: #dbeafe;
+      font-size: 12px;
+      overflow-wrap: anywhere;
+    }
 
     #message { color: #b91c1c; }
     .overdue { color: #b91c1c; font-weight: bold; }
@@ -57,12 +101,36 @@
     <input id="due_date" type="date">
     <button onclick="createTask()">Добавить задачу</button>
 
-    <h2>Список задач</h2>
+    
 
-    <div class="filters">
-      <button onclick="setFilter('all')">Все</button>
-      <button onclick="setFilter('active')">Активные</button>
-      <button onclick="setFilter('done')">Выполненные</button>
+    <h2>Задачи</h2>
+
+    <div class="view-switcher">
+      <button onclick="setView('list')">Список</button>
+      <button onclick="setView('calendar')">Календарь</button>
+    </div>
+
+    <div id="list-view">
+      <div class="filters">
+        <button onclick="setFilter('all')">Все</button>
+        <button onclick="setFilter('active')">Активные</button>
+        <button onclick="setFilter('done')">Выполненные</button>
+      </div>
+
+      <div id="tasks"></div>
+    </div>
+
+    <div id="calendar-view" class="hidden">
+      <div class="calendar-toolbar">
+        <button onclick="changeCalendarMonth(-1)">←</button>
+        <strong id="calendar-title"></strong>
+        <button onclick="changeCalendarMonth(1)">→</button>
+      </div>
+      <div class="view-switcher">
+        <button onclick="setCalendarMode('month')">Месяц</button>
+        <button onclick="setCalendarMode('week')">Неделя</button>
+      </div>
+      <div id="calendar"></div>
     </div>
 
     <div id="tasks"></div>
@@ -138,10 +206,97 @@
 
     let currentFilter = "all";
 
+    let currentView = "list";
+    let allTasks = [];
+    let calendarDate = new Date();
+    let calendarMode = "month";
+
     function setFilter(filter) {
       currentFilter = filter;
       loadTasks();
     }
+    function setView(view) {
+      currentView = view;
+
+      document.getElementById("list-view").classList.toggle(
+        "hidden",
+        view !== "list"
+      );
+
+      document.getElementById("calendar-view").classList.toggle(
+        "hidden",
+        view !== "calendar"
+      );
+
+      if (view === "calendar") {
+        renderCalendar();
+      }
+    }
+
+    function setCalendarMode(mode) {
+      calendarMode = mode;
+      renderCalendar();
+    }
+
+    function changeCalendarMonth(offset) {
+      if (calendarMode === "week") {
+        calendarDate.setDate(calendarDate.getDate() + offset * 7);
+      } else {
+        calendarDate.setMonth(calendarDate.getMonth() + offset);
+      }
+
+      renderCalendar();
+    }
+
+    function renderCalendar() {
+      const calendar = document.getElementById("calendar");
+      const title = document.getElementById("calendar-title");
+      if (calendarMode === "week") {
+        renderWeek(calendar, title);
+        return;
+      }
+
+      const year = calendarDate.getFullYear();
+      const month = calendarDate.getMonth();
+
+      title.textContent = calendarDate.toLocaleDateString("ru-RU", {
+        month: "long",
+        year: "numeric",
+      });
+
+      const weekDays = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
+      calendar.innerHTML = weekDays
+        .map(day => `<div class="calendar-day-number">${day}</div>`)
+        .join("");
+
+      const firstDay = new Date(year, month, 1);
+      const emptyDays = (firstDay.getDay() + 6) % 7;
+
+      for (let index = 0; index < emptyDays; index++) {
+        calendar.innerHTML += `<div></div>`;
+      }
+
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateString =
+          `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+
+        const dayTasks = allTasks.filter(task => task.due_date === dateString);
+
+        calendar.innerHTML += `
+          <div class="calendar-day">
+            <div class="calendar-day-number">${day}</div>
+            ${dayTasks
+              .map(task => `<div class="calendar-task">${task.title}</div>`)
+              .join("")}
+          </div>
+        `;
+      }
+    }
+
+
+
     function isOverdue(task) {
       const today = new Date().toISOString().slice(0, 10);
       return !task.done && task.due_date && task.due_date < today;
@@ -157,6 +312,7 @@
       }
 
       const tasks = await response.json();
+      allTasks = tasks;
       tasks.sort((firstTask, secondTask) => {
         if (!firstTask.due_date && !secondTask.due_date) return 0;
         if (!firstTask.due_date) return 1;
@@ -264,6 +420,53 @@
       });
       loadTasks();
     }
+
+    function renderWeek(calendar, title) {
+      const selectedDate = new Date(calendarDate);
+      const dayIndex = (selectedDate.getDay() + 6) % 7;
+
+      const monday = new Date(selectedDate);
+      monday.setDate(selectedDate.getDate() - dayIndex);
+
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+
+      title.textContent =
+        `${monday.toLocaleDateString("ru-RU", {
+          day: "numeric",
+          month: "long",
+        })} — ${sunday.toLocaleDateString("ru-RU", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        })}`;
+
+      const weekDays = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
+
+      calendar.innerHTML = weekDays
+        .map(day => `<div class="calendar-day-number">${day}</div>`)
+        .join("");
+
+      for (let offset = 0; offset < 7; offset++) {
+        const dayDate = new Date(monday);
+        dayDate.setDate(monday.getDate() + offset);
+
+        const dateString =
+          `${dayDate.getFullYear()}-${String(dayDate.getMonth() + 1).padStart(2, "0")}-${String(dayDate.getDate()).padStart(2, "0")}`;
+
+        const dayTasks = allTasks.filter(task => task.due_date === dateString);
+
+        calendar.innerHTML += `
+          <div class="calendar-day">
+            <div class="calendar-day-number">${dayDate.getDate()}</div>
+            ${dayTasks
+              .map(task => `<div class="calendar-task">${task.title}</div>`)
+              .join("")}
+          </div>
+        `;
+      }
+    }
+
   </script>
 </body>
 </html>
